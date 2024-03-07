@@ -13,13 +13,13 @@ The main objectives of this project are to enhance the security of the protocol 
 
 - Bloom Filters: Sending a bloom filter of the born list in addition to the homomorphic hash allows the receiver to check if its identifier is included in the sender's bloom filter. If it is, the receiver acknowledges the sender as the leader.
 
-- ZK-SNARKs: Sending a ZK-proof for guarantee the veracity of the received message.
+- ZK-SNARKs: Sending a ZK-proof to guarantee the veracity of the received message.
 
 # Current Stage
 
-Currently the project is under construction. It is implemented the original version and some communications and criptographic techniques, but it requires to review the state of the art about homomorphic hashes and bloom filter solid github projects. Regarding ZK-SNARK it is not designed neither introduced yet.
+Currently, the project is under construction. The original version has been implemented along with some communication and cryptographic techniques. However, it requires a review of the state-of-the-art regarding homomorphic hashes and solid GitHub projects related to bloom filters. As for ZK-SNARK, it has not been designed or introduced yet.
 
-Looking for collaborators. All feedback appreciated.
+We are actively seeking collaborators, and all feedback is appreciated.
 
 
 # License
