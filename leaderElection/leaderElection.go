@@ -12,7 +12,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"time"
-	b "ZK-leader-election/lthash"
 )
 
 // LeaderElection es la interfaz que define el método prueba
@@ -36,7 +35,6 @@ type LElection struct{
 	bornHash string
 	publicKey *ecdsa.PublicKey
 	privateKey *ecdsa.PrivateKey
-	LTHash 	   b.Hash
 }
 
 type MessageStruct struct {
@@ -44,7 +42,6 @@ type MessageStruct struct {
 	ID 		int 	`json:"id"`
 	Length	int 	`json:"length"`
 	Hash	string 	`json:"hash"`
-	LTHash 	[]byte 	`josn:"lthash"`
 }
 
 func hexStringToBoolSlice(hexString string) ([]bool, error) {
@@ -102,33 +99,21 @@ func (le *LElection) handleBorn(message MessageStruct) {
 	// Puedes agregar aquí la lógica específica para el tipo 'born'
 	if !le.InBornList(message.Hash) {
 		le.born = append(le.born, message.Hash)
-		le.LTHash.Add([]byte(message.Hash))
 	} 
 }
 
 func (le *LElection) handleLeader(message MessageStruct) {
 	// fmt.Println(le.id, "Ejecutando función para el tipo 'leader'. Contenido:", message.ID, message.Length)
-	h := b.New16()
-	h.SetState(message.LTHash)
-	if message.ID == le.id {
-		return
-	}
+	
 	//fmt.Println("0")
-	if h.In(le.born) == 0 && le.leader < message.ID  {
+	if len(le.born) == message.Length && le.leader < message.ID  {
 		fmt.Println("Soy ", le.id, " y cambio a ", message.ID)
 		le.leader = message.ID
-	} else if h.In(le.born) < 0 {
+	} else if len(le.born) < message.Length {
 		fmt.Println("Soy ", le.id, " y cambio a ", message.ID)
 		le.leader = message.ID
 	
 	}
-	// fmt.Println("4")
-	// if len(le.born) < message.Length {
-	// 	le.leader = message.ID
-	// } else if len(le.born) == message.Length && le.id < message.ID {
-	// 	le.leader = message.ID
-	// }
-	// Puedes agregar aquí la lógica específica para el tipo 'leader'
 }
 
 func (le *LElection) MessageReception(){
@@ -158,7 +143,6 @@ func (le *LElection) LeaderRequest(){
 				Type:    "leader",
 				ID: le.id,
 				Length: len(le.born),
-				LTHash: le.LTHash.Sum(nil),
 			}
 		
 			// Codificar la estructura en una cadena JSON
@@ -170,20 +154,7 @@ func (le *LElection) LeaderRequest(){
 		} else {
 			fmt.Println("Soy ",le.id,"Mi lider es ",le.leader)
 		}
-		// if len(le.born) == 1 {
-		// 	message := MessageStruct{
-		// 		Type:    "born",
-		// 		ID: le.id,
-		// 		Hash: le.bornHash,
-		// 	}
 		
-		// 	// Codificar la estructura en una cadena JSON
-		// 	jsonMessage, err := json.Marshal(message)
-		// 	if err != nil {
-		// 		fmt.Println("Error al codificar JSON:", err)
-		// 	}
-		// 	le.Send(string(jsonMessage))
-		// }
 		time.Sleep(200 * time.Millisecond)
 	}
 }
@@ -202,7 +173,6 @@ func (le *LElection) Send(message string) {
 
 func (le *LElection) StartServer(sender *a.UDPClient) {
 
-	le.LTHash = b.New16()
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		fmt.Println("Error generating private key:", err)
@@ -227,7 +197,6 @@ func (le *LElection) StartServer(sender *a.UDPClient) {
 	le.messageReceptionChannel = make(chan string)
 	le.messageSendingChannel = make(chan string)
 	le.born = append(le.born, signatureHex)
-	le.LTHash.Add([]byte(signatureHex))
 	server, err := a.NewUDPServer(8080+le.id, le.messageReceptionChannel, le.messageSendingChannel, sender)
 	if err != nil {
 		fmt.Println("Error creating UDP server:", err)
