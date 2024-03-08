@@ -9,11 +9,20 @@ The initial approach has vulnerabilities, particularly when malicious processes 
 # Objectives
 The main objectives of this project are to enhance the security of the protocol using two techniques:
 
-- Homomorphic Hashes: By replacing the size and identifier in leader messages with a homomorphic hash, we can verify if the receiver has an equal or larger born list. If it's a subset, no leadership change occurs. In case of equality, tie-breaking can be done using the identifier.
+1. Homomorphic Hashes:
 
-- Bloom Filters: Sending a bloom filter of the born list in addition to the homomorphic hash allows the receiver to check if its identifier is included in the sender's bloom filter. If it is, the receiver acknowledges the sender as the leader.
+- Objective Question: Can we enhance the security of the protocol by replacing the size and identifier in leader messages with a homomorphic hash, allowing us to verify if the receiver has an equal or larger born list? And in the case of a subset, can we ensure that no leadership change occurs, with tie-breaking based on the identifier in the event of equality?
 
-- ZK-SNARKs: Sending a ZK-proof to guarantee the veracity of the received message.
+2. Bloom Filters:
+
+- Objective Question: Is it possible to strengthen the protocol's security by sending a bloom filter of the born list along with the homomorphic hash, enabling the receiver to check if its identifier is included in the sender's bloom filter? Will acknowledgment of the sender as the leader occur if the identifier is present?
+3. ZK-SNARKs:
+
+- Objective Question: Can we send a ZK-proof to guarantee the veracity of the received message as part of the project's objectives?
+
+4. Transition to State-Machine Replication:
+
+- Objective Question: Is it feasible to transition from a standard one-shot consensus to a paradigm of state-machine replication as part of the project's objectives?
 
 # Current Stage
 
