@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-// LeaderElection es la interfaz que define el método prueba
+// LeaderElection is the interface defining the "test" method.
 type LeaderElection interface {
 	StartServer(*a.UDPClient)
 	Received() bool
@@ -23,6 +23,7 @@ type LeaderElection interface {
 	Leader() int
 }
 
+// LElection represents the implementation of the LeaderElection interface.
 type LElection struct{
 	id int
 	server *a.UDPServer
@@ -37,6 +38,7 @@ type LElection struct{
 	privateKey *ecdsa.PrivateKey
 }
 
+// MessageStruct represents the structure of the JSON messages exchanged.
 type MessageStruct struct {
 	Type 	string 	`json:"type"`
 	ID 		int 	`json:"id"`
@@ -44,14 +46,15 @@ type MessageStruct struct {
 	Hash	string 	`json:"hash"`
 }
 
+// hexStringToBoolSlice converts a hexadecimal string to a boolean slice.
 func hexStringToBoolSlice(hexString string) ([]bool, error) {
-	// Decodifica la cadena hexadecimal a []byte
+	// Decode the hexadecimal string to []byte
 	byteSlice, err := hex.DecodeString(hexString)
 	if err != nil {
 		return nil, err
 	}
 
-	// Convierte []byte a []bool
+	// Convert []byte to []bool
 	var boolSlice []bool
 	for _, b := range byteSlice {
 		boolSlice = append(boolSlice, b != 0x00)
@@ -60,8 +63,9 @@ func hexStringToBoolSlice(hexString string) ([]bool, error) {
 	return boolSlice, nil
 }
 
+// boolSliceToHexString converts a boolean slice to a hexadecimal string.
 func boolSliceToHexString(boolSlice []bool) (string, error) {
-	// Convierte []bool a []byte
+	// Convert []bool to []byte
 	var byteSlice []byte
 	for _, b := range boolSlice {
 		if b {
@@ -71,20 +75,23 @@ func boolSliceToHexString(boolSlice []bool) (string, error) {
 		}
 	}
 
-	// Convierte []byte a cadena hexadecimal
+	// Convert []byte to hexadecimal string
 	hexString := hex.EncodeToString(byteSlice)
 	return hexString, nil
 }
 
+// NewLE creates a new LeaderElection instance.
 func NewLE(id int) LeaderElection{
 	result := LElection{id:id, leader:id}
 	return &result
 }
 
+// Leader returns the current leader.
 func (le *LElection) Leader() int{
 	return le.leader
 }
 
+// InBornList checks if a given string is in the born list.
 func (le *LElection) InBornList(searchString string) bool {
 	for _, s := range le.born {
 		if s == searchString {
@@ -94,34 +101,31 @@ func (le *LElection) InBornList(searchString string) bool {
 	return false
 }
 
+// handleBorn handles 'born' messages.
 func (le *LElection) handleBorn(message MessageStruct) {
-	// fmt.Println(le.id, " Ejecutando función para el tipo 'born'. Contenido:", message.ID, message.Length)
-	// Puedes agregar aquí la lógica específica para el tipo 'born'
 	if !le.InBornList(message.Hash) {
 		le.born = append(le.born, message.Hash)
 	} 
 }
 
+// handleLeader handles 'leader' messages.
 func (le *LElection) handleLeader(message MessageStruct) {
-	// fmt.Println(le.id, "Ejecutando función para el tipo 'leader'. Contenido:", message.ID, message.Length)
-	
-	//fmt.Println("0")
 	if len(le.born) == message.Length && le.leader < message.ID  {
 		fmt.Println("I'm ", le.id, " and I change my leader to ", message.ID)
 		le.leader = message.ID
 	} else if len(le.born) < message.Length {
 		fmt.Println("I'm ", le.id, " and I change my leader to ", message.ID)
 		le.leader = message.ID
-	
 	}
 }
 
+// MessageReception listens for incoming messages and processes them based on their type.
 func (le *LElection) MessageReception(){
 	for message := range le.messageReceptionChannel {
 		var messageObject MessageStruct
 		err := json.Unmarshal([]byte(message), &messageObject)
 		if err != nil {
-			fmt.Println("Error al decodificar JSON:", err)
+			fmt.Println("Error decoding JSON:", err)
 		}
 
 		switch messageObject.Type {
@@ -135,20 +139,20 @@ func (le *LElection) MessageReception(){
 	}
 }
 
+// LeaderRequest sends leader messages periodically.
 func (le *LElection) LeaderRequest(){
 	for true {
 		if le.leader == le.id {
-			
 			message := MessageStruct{
 				Type:    "leader",
 				ID: le.id,
 				Length: len(le.born),
 			}
 		
-			// Codificar la estructura en una cadena JSON
+			// Encode the structure into a JSON string
 			jsonMessage, err := json.Marshal(message)
 			if err != nil {
-				fmt.Println("Error al codificar JSON:", err)
+				fmt.Println("Error encoding JSON:", err)
 			}
 			le.Send(string(jsonMessage))
 		} else {
@@ -159,18 +163,22 @@ func (le *LElection) LeaderRequest(){
 	}
 }
 
+// Received returns whether a message has been received.
 func (le *LElection) Received() bool{
 	return le.received
 }
 
+// From returns the source of the message.
 func (le *LElection) From() string{
 	return le.from
 }
 
+// Send sends a message through the message sending channel.
 func (le *LElection) Send(message string) {
 	le.messageSendingChannel <- message
 }
 
+// StartServer initializes the leader election server.
 func (le *LElection) StartServer(sender *a.UDPClient) {
 
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
@@ -190,7 +198,7 @@ func (le *LElection) StartServer(sender *a.UDPClient) {
 	rHex := fmt.Sprintf("%x", r)
 	sHex := fmt.Sprintf("%x", s)
 
-	// Combinar r y s en un solo string
+	// Combine r and s into a single string
 	signatureHex := "0x" + rHex + sHex
 	le.bornHash = signatureHex
 
@@ -213,10 +221,10 @@ func (le *LElection) StartServer(sender *a.UDPClient) {
 		Hash: signatureHex,
 	}
 
-	// Codificar la estructura en una cadena JSON
+	// Encode the structure into a JSON string
 	jsonMessage, err := json.Marshal(message)
 	if err != nil {
-		fmt.Println("Error al codificar JSON:", err)
+		fmt.Println("Error encoding JSON:", err)
 	}
 	le.Send(string(jsonMessage))
 

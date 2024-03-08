@@ -26,15 +26,15 @@ func main() {
 	endTime := time.Now()
 	fmt.Printf("Leader %d elected in %d milliseconds\n", server1.Leader(), endTime.Sub(startTime).Milliseconds())
 
-	time.Sleep(5 * time.Second)
-	for server1.Leader() == server2.Leader() == server3.Received()  {
-		fmt.Printf("Leaders %d %d %d elected \n", server1.Leader(),server2.Leader(),server3.Leader())
-		time.Sleep(5 * time.Second)
-	}
-	for true {
-		fmt.Printf("Leader %d elected in %d milliseconds\n", server1.Leader(), endTime.Sub(startTime).Milliseconds())
-		time.Sleep(1 * time.Second)
-	}
+	// time.Sleep(5 * time.Second)
+	// for server1.Leader() == server2.Leader() == server3.Received()  {
+	// 	fmt.Printf("Leaders %d %d %d elected \n", server1.Leader(),server2.Leader(),server3.Leader())
+	// 	time.Sleep(5 * time.Second)
+	// }
+	// for true {
+	// 	fmt.Printf("Leader %d elected in %d milliseconds\n", server1.Leader(), endTime.Sub(startTime).Milliseconds())
+	// 	time.Sleep(1 * time.Second)
+	// }
 	return
 
 }
