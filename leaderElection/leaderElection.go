@@ -13,7 +13,6 @@ import (
 	"crypto/sha256"
 	"time"
 	b "ZK-leader-election/lthash"
-	"bloom"
 )
 
 // LeaderElection es la interfaz que define el método prueba
@@ -38,7 +37,6 @@ type LElection struct{
 	publicKey *ecdsa.PublicKey
 	privateKey *ecdsa.PrivateKey
 	LTHash 	   b.Hash
-	Bloom 	*c.BloomFilter
 }
 
 type MessageStruct struct {
@@ -47,7 +45,6 @@ type MessageStruct struct {
 	Length	int 	`json:"length"`
 	Hash	string 	`json:"hash"`
 	LTHash 	[]byte 	`josn:"lthash"`
-	Bloom	string 	`json:"bloom"`
 }
 
 func hexStringToBoolSlice(hexString string) ([]bool, error) {
@@ -106,7 +103,6 @@ func (le *LElection) handleBorn(message MessageStruct) {
 	if !le.InBornList(message.Hash) {
 		le.born = append(le.born, message.Hash)
 		le.LTHash.Add([]byte(message.Hash))
-		le.Bloom.Add([]byte(message.Hash))
 	} 
 }
 
@@ -117,24 +113,14 @@ func (le *LElection) handleLeader(message MessageStruct) {
 	if message.ID == le.id {
 		return
 	}
-	boolSlice, err := hexStringToBoolSlice(message.Bloom)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
 	//fmt.Println("0")
 	if h.In(le.born) == 0 && le.leader < message.ID  {
 		fmt.Println("Soy ", le.id, " y cambio a ", message.ID)
 		le.leader = message.ID
 	} else if h.In(le.born) < 0 {
-		// fmt.Println(h.In(le.born))
-		bf := c.SetStateBloom(boolSlice)
-		// fmt.Println(le.id)
-		// fmt.Println(message.Bloom)
-		if bf.Contains([]byte(le.bornHash)) {
-			fmt.Println("Soy ", le.id, " y cambio a ", message.ID)
-			le.leader = message.ID
-		}
+		fmt.Println("Soy ", le.id, " y cambio a ", message.ID)
+		le.leader = message.ID
+	
 	}
 	// fmt.Println("4")
 	// if len(le.born) < message.Length {
@@ -167,15 +153,11 @@ func (le *LElection) MessageReception(){
 func (le *LElection) LeaderRequest(){
 	for true {
 		if le.leader == le.id {
-			hexString, err := boolSliceToHexString(le.Bloom.GetBitmap())
-			if err != nil {
-				fmt.Println("Error:", err)
-			}
+			
 			message := MessageStruct{
 				Type:    "leader",
 				ID: le.id,
 				Length: len(le.born),
-				Bloom: hexString,
 				LTHash: le.LTHash.Sum(nil),
 			}
 		
@@ -221,7 +203,6 @@ func (le *LElection) Send(message string) {
 func (le *LElection) StartServer(sender *a.UDPClient) {
 
 	le.LTHash = b.New16()
-	le.Bloom = bloom.NewWithEstimates(1000000, 0.01) 
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		fmt.Println("Error generating private key:", err)
@@ -247,7 +228,6 @@ func (le *LElection) StartServer(sender *a.UDPClient) {
 	le.messageSendingChannel = make(chan string)
 	le.born = append(le.born, signatureHex)
 	le.LTHash.Add([]byte(signatureHex))
-	le.Bloom.Add([]byte(signatureHex))
 	server, err := a.NewUDPServer(8080+le.id, le.messageReceptionChannel, le.messageSendingChannel, sender)
 	if err != nil {
 		fmt.Println("Error creating UDP server:", err)
