@@ -107,10 +107,10 @@ func (le *LElection) handleLeader(message MessageStruct) {
 	
 	//fmt.Println("0")
 	if len(le.born) == message.Length && le.leader < message.ID  {
-		fmt.Println("Soy ", le.id, " y cambio a ", message.ID)
+		fmt.Println("I'm ", le.id, " and I change my leader to ", message.ID)
 		le.leader = message.ID
 	} else if len(le.born) < message.Length {
-		fmt.Println("Soy ", le.id, " y cambio a ", message.ID)
+		fmt.Println("I'm ", le.id, " and I change my leader to ", message.ID)
 		le.leader = message.ID
 	
 	}
@@ -130,7 +130,7 @@ func (le *LElection) MessageReception(){
 		case "leader":
 			le.handleLeader(messageObject)
 		default:
-			fmt.Println("Tipo desconocido:", messageObject.Type, " es lo que llega de ", message)
+			fmt.Println("Unknown type:", messageObject.Type)
 		}
 	}
 }
@@ -152,7 +152,7 @@ func (le *LElection) LeaderRequest(){
 			}
 			le.Send(string(jsonMessage))
 		} else {
-			fmt.Println("Soy ",le.id,"Mi lider es ",le.leader)
+			fmt.Println("I'm ",le.id," and my leader is ",le.leader)
 		}
 		
 		time.Sleep(200 * time.Millisecond)
